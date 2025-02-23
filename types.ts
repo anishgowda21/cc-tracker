@@ -2,6 +2,7 @@ export type Card = {
   id: string;
   bankName: string;
   cardName: string;
+  network: string;
   limit: number;
   billDate: number; // Day of month bill generates (1-31)
   dueDate: number; // Day of month payment is due (1-31)
