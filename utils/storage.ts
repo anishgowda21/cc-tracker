@@ -1,4 +1,4 @@
-import { Card, CardSecureDetails, Payment } from "@/types";
+import { BillCycle, Card, CardSecureDetails, Payment } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
@@ -21,7 +21,7 @@ const calculateDueDate = (billDate: number, dueDate: number): Date => {
 
 const STORAGE_KEYS = {
   CARDS: "cards",
-  PAYMENTS: "payments",
+  BILLCYCLES: "bill_cycles",
 };
 
 export const getCards = async (): Promise<Card[]> => {
@@ -78,29 +78,62 @@ export const getCardSecureDetails = async (
   }
 };
 
-export const addPayment = async (payment: Payment): Promise<boolean> => {
+export const getBillCycles = async (): Promise<BillCycle[]> => {
   try {
-    const payments = await getPayments(payment.cardId);
-    const updatedPayments = [...payments, payment];
+    const cycles = await AsyncStorage.getItem(STORAGE_KEYS.BILLCYCLES);
+    return cycles ? JSON.parse(cycles) : [];
+  } catch (error) {
+    console.error("Error getting bill cycles:", error);
+    return [];
+  }
+};
+
+export const getCardBillCycles = async (
+  cardId: string
+): Promise<BillCycle[]> => {
+  try {
+    const allCycles = await getBillCycles();
+    return allCycles.filter((cycle) => cycle.cardId === cardId);
+  } catch (error) {
+    console.error("Error getting card bill cycles:", error);
+    return [];
+  }
+};
+
+export const createBillCycle = async (
+  billCycle: BillCycle
+): Promise<boolean> => {
+  try {
+    const existingCycles = await getBillCycles();
+    const updatedCycles = [...existingCycles, billCycle];
+
     await AsyncStorage.setItem(
-      `${STORAGE_KEYS.PAYMENTS}_${payment.cardId}`,
-      JSON.stringify(updatedPayments)
+      STORAGE_KEYS.BILLCYCLES,
+      JSON.stringify(updatedCycles)
     );
     return true;
   } catch (error) {
-    console.error("Error adding payment:", error);
+    console.error("Error saving bill cycle:", error);
     return false;
   }
 };
 
-export const getPayments = async (cardId: string): Promise<Payment[]> => {
+export const updateBillCycle = async (
+  billCycle: BillCycle
+): Promise<boolean> => {
   try {
-    const payments = await AsyncStorage.getItem(
-      `${STORAGE_KEYS.PAYMENTS}_${cardId}`
+    const existingCycles = await getBillCycles();
+    const updatedCycles = existingCycles.map((c) =>
+      c.id === billCycle.id ? billCycle : c
     );
-    return payments ? JSON.parse(payments) : [];
+
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.BILLCYCLES,
+      JSON.stringify(updatedCycles)
+    );
+    return true;
   } catch (error) {
-    console.error("Error getting payments:", error);
-    return [];
+    console.error("Error updating bill cycle:", error);
+    return false;
   }
 };

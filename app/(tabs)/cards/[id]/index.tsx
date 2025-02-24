@@ -32,13 +32,13 @@ export default function CardView() {
         <Text className="text-white text-2xl mb-6">{card.bankName}</Text>
 
         <Text className="text-white text-lg opacity-80">Current Balance</Text>
-        <Text className="text-white text-4xl mb-6">${card.currentBalance}</Text>
+        {/* <Text className="text-white text-4xl mb-6">${card.currentBalance}</Text> */}
 
         <View className="flex-row justify-between">
           <View>
             <Text className="text-white opacity-80">Available Credit</Text>
             <Text className="text-white text-2xl">
-              ${card.limit - card.currentBalance}
+              {/* ${card.limit - card.currentBalance} */}
             </Text>
           </View>
           <View>
