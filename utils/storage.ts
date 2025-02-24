@@ -66,6 +66,36 @@ export const saveCardSecureDetails = async (
   }
 };
 
+export const deleteCard = async (cardId: string): Promise<boolean> => {
+  try {
+    // Delete card from AsyncStorage
+    const existingCards = await getCards();
+    const updatedCards = existingCards.filter((card) => card.id !== cardId);
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.CARDS,
+      JSON.stringify(updatedCards)
+    );
+
+    // Delete secure details
+    await SecureStore.deleteItemAsync(`card_details_${cardId}`);
+
+    // Delete associated bill cycles
+    const existingCycles = await getBillCycles();
+    const updatedCycles = existingCycles.filter(
+      (cycle) => cycle.cardId !== cardId
+    );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.BILLCYCLES,
+      JSON.stringify(updatedCycles)
+    );
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting card:", error);
+    return false;
+  }
+};
+
 export const getCardSecureDetails = async (
   cardId: string
 ): Promise<CardSecureDetails | null> => {
