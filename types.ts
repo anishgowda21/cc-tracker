@@ -32,3 +32,31 @@ export type CardSecureDetails = {
   cvv: string;
   cardHolderName: string;
 };
+
+export interface FormData {
+  bankName: string;
+  cardName: string;
+  network: string;
+  cardNumber: string;
+  expiry: string;
+  cvv: string;
+  cardHolderName: string;
+  billDate: string;
+  dueDate: string;
+  limit: string;
+  color: string;
+}
+
+// Error state type
+export interface ErrorState {
+  bankName?: string;
+  cardName?: string;
+  network?: string;
+  cardNumber?: string;
+  expiry?: string;
+  cvv?: string;
+  cardHolderName?: string;
+  billDate?: string;
+  dueDate?: string;
+  limit?: string;
+}
