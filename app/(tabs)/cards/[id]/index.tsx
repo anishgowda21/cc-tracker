@@ -16,24 +16,7 @@ import {
 } from "@/utils/storage";
 import { Card, BillCycle } from "@/types";
 import { ConfirmationModal } from "@/components/common/model";
-
-// Helper to determine current cycle date
-const getCurrentCycleDate = (billDate: number): string => {
-  const today = new Date();
-  const day = today.getDate();
-  let month = today.getMonth();
-  let year = today.getFullYear();
-
-  if (day < billDate) {
-    month -= 1;
-    if (month < 0) {
-      month = 11;
-      year -= 1;
-    }
-  }
-
-  return `${year}-${String(month + 1).padStart(2, "0")}`;
-};
+import { getCurrentCycleDate, getDueDate } from "@/utils/helpers/dateHelpers";
 
 // Banner content based on cycle status
 const getBannerContent = (cycle: BillCycle) => {
@@ -92,18 +75,11 @@ export default function CardView() {
     );
 
     if (!hasCurrentCycle) {
-      const today = new Date();
-      const [year, month] = currentCycleDate.split("-").map(Number); // e.g., ["2025", "02"]
-      let dueMonth = month;
-      let dueYear = year;
-
-      // Adjust dueDate: same month if dueDate >= billDate, next month if dueDate < billDate
-      if (currentCard.dueDate < currentCard.billDate) {
-        dueMonth = month === 12 ? 1 : month + 1;
-        dueYear = month === 12 ? year + 1 : year;
-      }
-
-      const dueDate = new Date(dueYear, dueMonth - 1, currentCard.dueDate);
+      const dueDate = getDueDate(
+        currentCard.billDate,
+        currentCard.dueDate,
+        currentCycleDate
+      );
 
       const newCycle: BillCycle = {
         id: `cycle_${currentCycleDate}_${id}`,
@@ -113,7 +89,7 @@ export default function CardView() {
         remainingAmount: 0,
         status: "not updated",
         payments: [],
-        dueDate: dueDate.toISOString().split("T")[0], // e.g., "2025-02-28" or "2025-03-03"
+        dueDate,
       };
       await createBillCycle(newCycle);
       setBillCycles([...cycles, newCycle]);
