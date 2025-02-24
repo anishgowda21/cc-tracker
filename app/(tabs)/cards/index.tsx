@@ -23,7 +23,9 @@ export default function CardsScreen() {
       <View className="mt-4">
         {cardList.map((card) => (
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              router.push(`/cards/${card.id}`);
+            }}
             key={card.id}
             className="bg-white p-4 rounded-lg mb-4"
           >
