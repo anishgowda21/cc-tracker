@@ -7,7 +7,10 @@ export default function CardsLayout() {
         name="index"
         options={{ headerShown: false, title: "Cards" }}
       />
-      <Stack.Screen name="add" options={{ title: "Add New Card" }} />
+      <Stack.Screen
+        name="add"
+        options={{ title: "Add New Card", headerShown: false }}
+      />
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
       <Stack.Screen name="test" options={{ title: "Test Layout" }} />
     </Stack>

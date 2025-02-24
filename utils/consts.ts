@@ -8,33 +8,49 @@ export const cardColors = [
 export const colorNames = ["Navy", "Gold", "Teal", "Brown", "Indigo"];
 
 export const banks = [
-  { label: "Select Bank", value: "" },
-  { label: "HDFC Bank", value: "HDFC Bank" },
-  { label: "State Bank of India (SBI)", value: "State Bank of India (SBI)" },
-  { label: "ICICI Bank", value: "ICICI Bank" },
-  { label: "Axis Bank", value: "Axis Bank" },
-  { label: "Bank of Baroda", value: "Bank of Baroda" },
-  { label: "Punjab National Bank", value: "Punjab National Bank" },
-  { label: "Canara Bank", value: "Canara Bank" },
-  { label: "Kotak Mahindra Bank", value: "Kotak Mahindra Bank" },
-  { label: "RBL Bank", value: "RBL Bank" },
-  { label: "IndusInd Bank", value: "IndusInd Bank" },
-  { label: "American Express", value: "American Express" },
-  { label: "Standard Chartered Bank", value: "Standard Chartered Bank" },
-  { label: "Citibank", value: "Citibank" },
-  { label: "IDFC FIRST Bank", value: "IDFC FIRST Bank" },
-  { label: "Yes Bank", value: "Yes Bank" },
-  { label: "Other (Type Below)", value: "other" },
+  { label: "Select Bank", value: "", color: "black" },
+  { label: "HDFC Bank", value: "HDFC Bank", color: "black" },
+  {
+    label: "State Bank of India (SBI)",
+    value: "State Bank of India (SBI)",
+    color: "black",
+  },
+  { label: "ICICI Bank", value: "ICICI Bank", color: "black" },
+  { label: "Axis Bank", value: "Axis Bank", color: "black" },
+  { label: "Bank of Baroda", value: "Bank of Baroda", color: "black" },
+  {
+    label: "Punjab National Bank",
+    value: "Punjab National Bank",
+    color: "black",
+  },
+  { label: "Canara Bank", value: "Canara Bank", color: "black" },
+  {
+    label: "Kotak Mahindra Bank",
+    value: "Kotak Mahindra Bank",
+    color: "black",
+  },
+  { label: "RBL Bank", value: "RBL Bank", color: "black" },
+  { label: "IndusInd Bank", value: "IndusInd Bank", color: "black" },
+  { label: "American Express", value: "American Express", color: "black" },
+  {
+    label: "Standard Chartered Bank",
+    value: "Standard Chartered Bank",
+    color: "black",
+  },
+  { label: "Citibank", value: "Citibank", color: "black" },
+  { label: "IDFC FIRST Bank", value: "IDFC FIRST Bank", color: "black" },
+  { label: "Yes Bank", value: "Yes Bank", color: "black" },
+  { label: "Other (Type Below)", value: "other", color: "black" },
 ];
 
 export const networks = [
-  { label: "Select Network", value: "" },
-  { label: "Visa", value: "Visa" },
-  { label: "Mastercard", value: "Mastercard" },
-  { label: "American Express", value: "American Express" },
-  { label: "RuPay", value: "RuPay" },
-  { label: "Discover", value: "Discover" },
-  { label: "Other (Type Below)", value: "other" },
+  { label: "Select Network", value: "", color: "black" },
+  { label: "Visa", value: "Visa", color: "black" },
+  { label: "Mastercard", value: "Mastercard", color: "black" },
+  { label: "American Express", value: "American Express", color: "black" },
+  { label: "RuPay", value: "RuPay", color: "black" },
+  { label: "Discover", value: "Discover", color: "black" },
+  { label: "Other (Type Below)", value: "other", color: "black" },
 ];
 
 export const pickerSelectStyles = {
@@ -49,6 +65,17 @@ export const pickerSelectStyles = {
     paddingRight: 30, // to ensure the text is never behind the icon
     backgroundColor: "white",
   },
+  modalViewMiddle: {
+    backgroundColor: "#f8f8f8",
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: "#dadada",
+  },
+  modalViewBottom: {
+    backgroundColor: "#f8f8f8",
+    color: "black",
+  },
+
   inputAndroid: {
     fontSize: 16,
     paddingHorizontal: 10,

@@ -35,6 +35,7 @@ import {
 import { FullCardPreview } from "@/components/common/CardPreview";
 import { Section } from "@/components/cardadd/Section";
 import { formatCardNumber } from "@/utils/helpers/formHelpers";
+import { AntDesign } from "@expo/vector-icons";
 
 export default function AddCardScreen() {
   // Form input refs for keyboard navigation
@@ -123,8 +124,9 @@ export default function AddCardScreen() {
 
   const handleCustomBankSubmit = () => {
     if (customBankValue.trim()) {
-      setFormData({ ...formData, bankName: customBankValue.trim() });
-      setSelectedBank(customBankValue.trim());
+      const trimmedValue = customBankValue.trim();
+      setFormData({ ...formData, bankName: trimmedValue });
+      setSelectedBank(trimmedValue);
       setShowCustomBank(false);
       setCustomBankValue("");
     }
@@ -305,7 +307,7 @@ export default function AddCardScreen() {
       if (!cycleSaved) throw new Error("Failed to create bill cycle");
 
       Alert.alert("Success", "Card added successfully!", [
-        { text: "OK", onPress: () => router.push(`/cards/${newCard.id}`) },
+        { text: "OK", onPress: () => router.replace(`/cards/${newCard.id}`) },
       ]);
     } catch (error) {
       Alert.alert("Error", "Failed to save card. Please try again.");
@@ -350,12 +352,13 @@ export default function AddCardScreen() {
               <RNPickerSelect
                 onValueChange={handleBankSelect}
                 items={banks}
-                value={showCustomBank ? null : selectedBank}
-                placeholder={{ label: "Select Bank", value: null }}
+                value={selectedBank}
+                placeholder={{}}
                 style={pickerSelectStyles}
                 ref={bankPickerRef}
-                useNativeAndroidPickerStyle={false} // Important for Android styling
+                useNativeAndroidPickerStyle={false}
                 onOpen={() => scrollToInput(bankNameRef)}
+                Icon={() => <AntDesign name="down" size={24} color="gray" />}
               />
               {showCustomBank && (
                 <View className="mt-2 flex-row items-center">
@@ -391,6 +394,12 @@ export default function AddCardScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+              {selectedBank &&
+                !banks.some((bank) => bank.value === selectedBank) && (
+                  <Text className="text-gray-600 text-xs mt-1">
+                    Custom Bank: {selectedBank}
+                  </Text>
+                )}
               {errors.bankName && (
                 <Text className="text-red-500 text-xs mt-1">
                   {errors.bankName}
@@ -419,12 +428,13 @@ export default function AddCardScreen() {
               <RNPickerSelect
                 onValueChange={handleNetworkSelect}
                 items={networks}
-                value={showCustomNetwork ? null : selectedNetwork}
-                placeholder={{ label: "Select Network", value: null }}
+                value={selectedNetwork}
+                placeholder={{}}
                 style={pickerSelectStyles}
                 ref={networkPickerRef}
                 useNativeAndroidPickerStyle={false} // Important for Android styling
                 onOpen={() => scrollToInput(networkRef)}
+                Icon={() => <AntDesign name="down" size={24} color="gray" />}
               />
               {showCustomNetwork && (
                 <View className="mt-2 flex-row items-center">
@@ -460,6 +470,12 @@ export default function AddCardScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+              {selectedNetwork &&
+                !networks.some((net) => net.value === selectedNetwork) && (
+                  <Text className="text-gray-600 text-xs mt-1">
+                    Custom Network: {selectedNetwork}
+                  </Text>
+                )}
               {errors.network && (
                 <Text className="text-red-500 text-xs mt-1">
                   {errors.network}

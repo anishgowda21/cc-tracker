@@ -44,6 +44,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
         keyboardType={keyboardType}
         maxLength={maxLength}
         secureTextEntry={secureTextEntry}
