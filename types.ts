@@ -17,6 +17,7 @@ export type BillCycle = {
   totalBill: number;
   remainingAmount: number;
   dueDate: string; // e.g., "2025-02-25"
+  rewardPoints?: null | number;
   status: "not updated" | "unpaid" | "partial" | "paid" | "overdue";
   payments: Payment[];
 };
@@ -25,6 +26,8 @@ export type Payment = {
   id: string;
   amount: number;
   date: string;
+  method?: string;
+  reference?: string;
 };
 
 export type CardSecureDetails = {

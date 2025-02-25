@@ -2,23 +2,6 @@ import { BillCycle, Card, CardSecureDetails, Payment } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
-const calculateDueDate = (billDate: number, dueDate: number): Date => {
-  const today = new Date();
-  let dueMonth = today.getMonth();
-  let dueYear = today.getFullYear();
-
-  if (dueDate < billDate) {
-    dueMonth = dueMonth + 1;
-
-    if (dueMonth > 11) {
-      dueMonth = 0;
-      dueYear = dueYear + 1;
-    }
-  }
-
-  return new Date(dueYear, dueMonth, dueDate);
-};
-
 const STORAGE_KEYS = {
   CARDS: "cards",
   BILLCYCLES: "bill_cycles",
@@ -49,6 +32,16 @@ export const saveCard = async (card: Card): Promise<boolean> => {
     return false;
   }
 };
+
+export async function getCardById(cardId: string): Promise<Card | null> {
+  try {
+    const cards = await getCards();
+    return cards.find((c) => c.id === cardId) || null;
+  } catch (error) {
+    console.error("Error fetching card by ID:", error);
+    return null;
+  }
+}
 
 export const saveCardSecureDetails = async (
   cardId: string,
@@ -127,6 +120,21 @@ export const getCardBillCycles = async (
   } catch (error) {
     console.error("Error getting card bill cycles:", error);
     return [];
+  }
+};
+
+export const getLatestBillCycle = async (
+  cardId: string
+): Promise<BillCycle | null> => {
+  try {
+    const cycles = await getCardBillCycles(cardId);
+    if (cycles.length === 0) return null;
+    return [...cycles].sort((a, b) =>
+      b.cycleDate.localeCompare(a.cycleDate)
+    )[0];
+  } catch (error) {
+    console.error("Error fetching latest bill cycle:", error);
+    return null;
   }
 };
 

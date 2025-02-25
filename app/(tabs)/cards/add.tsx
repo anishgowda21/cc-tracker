@@ -310,6 +310,7 @@ export default function AddCardScreen() {
         cycleDate: currentCycleDate,
         totalBill: 0,
         remainingAmount: 0,
+        rewardPoints: null,
         status: "not updated" as
           | "not updated"
           | "unpaid"

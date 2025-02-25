@@ -5,10 +5,9 @@ import {
   TextInput,
   ScrollView,
   Keyboard,
-  KeyboardEvent,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   getCards,
   getCardBillCycles,
@@ -98,9 +97,11 @@ export default function CardView() {
     };
   }, [showBillInput]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const loadData = async () => {
     const cards = await getCards();
@@ -133,6 +134,7 @@ export default function CardView() {
         cardId: id as string,
         cycleDate: currentCycleDate,
         totalBill: 0,
+        rewardPoints: null,
         remainingAmount: 0,
         status: "not updated",
         payments: [],
