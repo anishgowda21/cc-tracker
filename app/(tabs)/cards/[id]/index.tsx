@@ -227,6 +227,10 @@ export default function CardView() {
           <TouchableOpacity
             className="bg-white rounded-xl p-4 shadow flex-1 mr-2 items-center"
             onPress={() => router.push(`/cards/${id}/payment`)}
+            disabled={
+              latestCycle?.status === "paid" ||
+              latestCycle?.status === "not updated"
+            }
           >
             <View className="bg-blue-100 p-2 rounded-full mb-2">
               <Feather name="dollar-sign" size={20} color="#2563EB" />
@@ -234,7 +238,10 @@ export default function CardView() {
             <Text className="text-sm font-medium text-gray-800">Pay Now</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity className="bg-white rounded-xl p-4 shadow flex-1 mx-2 items-center">
+          <TouchableOpacity
+            className="bg-white rounded-xl p-4 shadow flex-1 mx-2 items-center"
+            onPress={() => router.push(`/cards/${id}/billHistory`)}
+          >
             <View className="bg-purple-100 p-2 rounded-full mb-2">
               <Feather name="file-text" size={20} color="#7C3AED" />
             </View>
@@ -363,8 +370,17 @@ export default function CardView() {
       {/* Edit and Delete buttons side by side */}
       <View className="flex-row mb-8 space-x-3">
         {/* Edit Card Button */}
-        <TouchableOpacity className="bg-indigo-600 p-4 rounded-xl flex-1 flex-row justify-center shadow">
-          <Text className="text-white font-semibold">Edit Card</Text>
+        <TouchableOpacity
+          className="flex-1 flex-row justify-center items-center bg-indigo-600 p-4 rounded-xl shadow"
+          onPress={() => router.push(`/cards/${id}/edit`)}
+        >
+          <Feather
+            name="edit"
+            size={18}
+            color="#FFFFFF"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-white font-medium">Edit Card</Text>
         </TouchableOpacity>
 
         {/* Delete Card Button */}

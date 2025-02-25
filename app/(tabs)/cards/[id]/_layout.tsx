@@ -14,8 +14,11 @@ export default function CardViewLayout() {
         name="payment"
         options={{ title: "Make Payment", headerShown: false }}
       />
+      <Stack.Screen
+        name="billHistory"
+        options={{ title: "Payment History", headerShown: false }}
+      />
       {/* 
-      <Stack.Screen name="history" options={{ title: "Payment History" }} />
       <Stack.Screen name="stats" options={{ title: "Statistics" }} />
       */}
     </Stack>
