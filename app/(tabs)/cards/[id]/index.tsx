@@ -193,6 +193,7 @@ export default function CardView() {
       ref={scrollViewRef}
       className="flex-1 bg-gray-50"
       contentContainerStyle={{ padding: 16 }}
+      directionalLockEnabled={true}
     >
       {/* Card Details - Visual Credit Card */}
       <CardDetails card={card} latestCycle={latestCycle} />
@@ -322,14 +323,27 @@ export default function CardView() {
                 className="border border-gray-300 p-3 rounded-lg mb-3"
                 onFocus={scrollToInput}
               />
-              <TouchableOpacity
-                className="bg-blue-600 p-3 rounded-lg"
-                onPress={handleBillUpdate}
-              >
-                <Text className="text-white text-center font-medium">
-                  Save Bill Amount
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row space-x-3">
+                <TouchableOpacity
+                  className="bg-blue-600 p-3 rounded-lg flex-1"
+                  onPress={handleBillUpdate}
+                >
+                  <Text className="text-white text-center font-medium">
+                    Save Bill Amount
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-gray-200 p-3 rounded-lg flex-1"
+                  onPress={() => {
+                    setBillInput("");
+                    setShowBillInput(false);
+                  }}
+                >
+                  <Text className="text-gray-700 text-center font-medium">
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <TouchableOpacity

@@ -25,7 +25,7 @@ type Props = {
   scrollToInput: (ref: React.RefObject<TextInput>) => void;
 };
 
-export function CardInformationSection({
+export default function CardInformationSection({
   formData,
   setFormData,
   selectedBank,
@@ -106,7 +106,7 @@ export function CardInformationSection({
           onValueChange={handleBankSelect}
           items={banks}
           value={selectedBank}
-          placeholder={{ label: "Select a bank", value: null }}
+          placeholder={{}}
           style={pickerSelectStyles}
           ref={bankPickerRef}
           useNativeAndroidPickerStyle={false}
@@ -176,7 +176,7 @@ export function CardInformationSection({
           onValueChange={handleNetworkSelect}
           items={networks}
           value={selectedNetwork}
-          placeholder={{ label: "Select a network", value: null }}
+          placeholder={{}}
           style={pickerSelectStyles}
           ref={networkPickerRef}
           useNativeAndroidPickerStyle={false}

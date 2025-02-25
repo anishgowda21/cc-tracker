@@ -9,7 +9,7 @@ type Props = {
   setSelectedColorIndex: (index: number) => void;
 };
 
-export function CardAppearanceSection({
+export default function CardAppearanceSection({
   formData,
   setFormData,
   selectedColorIndex,

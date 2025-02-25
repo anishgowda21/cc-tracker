@@ -7,9 +7,13 @@ export default function CardViewLayout() {
         name="index"
         options={{
           title: "Card Details",
+          headerShown: false,
         }}
       />
-      <Stack.Screen name="payment" options={{ title: "Make Payment" }} />
+      <Stack.Screen
+        name="payment"
+        options={{ title: "Make Payment", headerShown: false }}
+      />
       {/* 
       <Stack.Screen name="history" options={{ title: "Payment History" }} />
       <Stack.Screen name="stats" options={{ title: "Statistics" }} />

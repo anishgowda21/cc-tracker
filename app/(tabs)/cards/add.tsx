@@ -4,58 +4,42 @@ import {
   saveCardSecureDetails,
   createBillCycle,
 } from "@/utils/storage";
-import { router } from "expo-router";
 import { useState, useRef } from "react";
-import RNPickerSelect from "react-native-picker-select";
 import {
-  Text,
-  View,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ConfirmationModal } from "@/components/common/model";
+import { FullCardPreview } from "@/components/common/FullCardPreview";
+import { ProgressIndicator } from "@/components/cardadd/ProgressIndicator";
+import { NavigationButtons } from "@/components/cardadd/NavigationButtons";
+import { WelcomeDialog } from "@/components/cardadd/WelcomeDialog";
+import { SuccessDialog } from "@/components/cardadd/SuccessDialog";
+import { HelpDialog } from "@/components/cardadd/HelpDialog";
+import { cardColors } from "@/utils/consts";
 import {
   checkDueDateSanity,
-  formatExpiry,
   getCurrentCycleDate,
   getDueDate,
 } from "@/utils/helpers/dateHelpers";
-import { FormInput } from "@/components/cardadd/FormInput";
+import { MaterialIcons } from "@expo/vector-icons";
 import {
-  banks,
-  cardColors,
-  colorNames,
-  networks,
-  pickerSelectStyles,
-} from "@/utils/consts";
-import { FullCardPreview } from "@/components/common/FullCardPreview";
-import { Section } from "@/components/cardadd/Section";
-import { formatCardNumber } from "@/utils/helpers/formHelpers";
-import { AntDesign } from "@expo/vector-icons";
+  BillingInformationSection,
+  CardAppearanceSection,
+  CardDetailsSection,
+  CardInformationSection,
+} from "@/components/cardadd/Sections";
 
 export default function AddCardScreen() {
-  // Form input refs for keyboard navigation
-  const bankPickerRef = useRef(null);
-  const networkPickerRef = useRef(null);
-  const bankNameRef = useRef<TextInput>(null);
-  const cardNameRef = useRef<TextInput>(null);
-  const networkRef = useRef<TextInput>(null);
-  const cardNumberRef = useRef<TextInput>(null);
-  const expiryRef = useRef<TextInput>(null);
-  const cvvRef = useRef<TextInput>(null);
-  const cardHolderNameRef = useRef<TextInput>(null);
-  const billDateRef = useRef<TextInput>(null);
-  const dueDateRef = useRef<TextInput>(null);
-  const limitRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-  const customBankRef = useRef<TextInput>(null);
-  const customNetworkRef = useRef<TextInput>(null);
-
-  // Form state
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const totalSteps = 4;
   const [formData, setFormData] = useState<FormData>({
     bankName: "",
     cardName: "",
@@ -69,8 +53,6 @@ export default function AddCardScreen() {
     limit: "",
     color: cardColors[0],
   });
-
-  // UI state
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
   const [showCustomBank, setShowCustomBank] = useState<boolean>(false);
@@ -81,6 +63,18 @@ export default function AddCardScreen() {
   const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
   const [warningMessage, setWarningMessage] = useState<string>("");
   const [errors, setErrors] = useState<ErrorState>({});
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState<boolean>(true);
+  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
+  const [newCardId, setNewCardId] = useState<string>("");
+  const [showHelpDialog, setShowHelpDialog] = useState<boolean>(false);
+  const [helpContent, setHelpContent] = useState<string>("");
+
+  const stepHelpContent = [
+    "Enter your bank name, card name (like 'Gold', 'Platinum', etc.), and card network (Visa, Mastercard, etc.). This helps identify your card.",
+    "Enter your card number, expiry date, CVV, and cardholder name as they appear on your physical card. This information is securely stored and used to display your card preview.",
+    "Enter the monthly billing date (when your statement is generated) and payment due date. The credit limit is the maximum amount you can spend on this card.",
+    "Choose a color for your card visualization. This helps you quickly identify different cards in your collection.",
+  ];
 
   const scrollToInput = (inputRef: React.RefObject<TextInput>) => {
     if (inputRef.current && scrollViewRef.current) {
@@ -94,150 +88,172 @@ export default function AddCardScreen() {
     }
   };
 
-  const handleBankSelect = (value: string) => {
-    if (value === "other") {
-      setShowCustomBank(true);
-      setSelectedBank(null);
-      setFormData({ ...formData, bankName: "" });
-      setCustomBankValue("");
-    } else if (value && !showCustomBank) {
-      setShowCustomBank(false);
-      setSelectedBank(value);
-      setFormData({ ...formData, bankName: value });
-      setCustomBankValue("");
-    }
-  };
-
-  const handleNetworkSelect = (value: string) => {
-    if (value === "other") {
-      setShowCustomNetwork(true);
-      setSelectedNetwork(null);
-      setFormData({ ...formData, network: "" });
-      setCustomNetworkValue("");
-    } else if (value && !showCustomNetwork) {
-      setShowCustomNetwork(false);
-      setSelectedNetwork(value);
-      setFormData({ ...formData, network: value });
-      setCustomNetworkValue(""); // Reset custom input
-    }
-  };
-
-  const handleCustomBankSubmit = () => {
-    if (customBankValue.trim()) {
-      const trimmedValue = customBankValue.trim();
-      setFormData({ ...formData, bankName: trimmedValue });
-      setSelectedBank(trimmedValue);
-      setShowCustomBank(false);
-      setCustomBankValue("");
-    }
-  };
-
-  const handleCustomNetworkSubmit = () => {
-    if (customNetworkValue.trim()) {
-      setFormData({ ...formData, network: customNetworkValue.trim() });
-      setSelectedNetwork(customNetworkValue.trim());
-      setShowCustomNetwork(false);
-      setCustomNetworkValue("");
-    }
-  };
-
-  const validateForm = (): boolean => {
+  const validateStep = (step: number): boolean => {
     const newErrors: ErrorState = {};
     let isValid = true;
 
-    if (!formData.bankName.trim()) {
-      newErrors.bankName = "Bank name is required";
-      isValid = false;
-    }
+    setErrors({});
 
-    if (!formData.cardName.trim()) {
-      newErrors.cardName = "Card name is required";
-      isValid = false;
-    }
-
-    if (!formData.network.trim()) {
-      newErrors.network = "Card network is required";
-      isValid = false;
-    }
-
-    const cardNumberDigits = formData.cardNumber.replace(/\s/g, "");
-    if (!cardNumberDigits) {
-      newErrors.cardNumber = "Card number is required";
-      isValid = false;
-    } else if (cardNumberDigits.length < 13 || cardNumberDigits.length > 16) {
-      newErrors.cardNumber = "Card number must be between 13 and 16 digits";
-      isValid = false;
-    }
-
-    // Expiry validation
-    if (!formData.expiry.trim()) {
-      newErrors.expiry = "Expiry date is required";
-      isValid = false;
-    } else {
-      const [month, year] = formData.expiry.split("/");
-      if (!month || !year || parseInt(month) > 12 || parseInt(month) < 1) {
-        newErrors.expiry = "Invalid expiry date";
-        isValid = false;
-      } else {
-        const expiryDate = new Date(parseInt(`20${year}`), parseInt(month) - 1);
-        if (expiryDate < new Date()) {
-          newErrors.expiry = "Card has expired";
-          isValid = false;
+    switch (step) {
+      case 0:
+        if (!formData.bankName.trim())
+          (newErrors.bankName = "Bank name is required"), (isValid = false);
+        if (!formData.cardName.trim())
+          (newErrors.cardName = "Card name is required"), (isValid = false);
+        if (!formData.network.trim())
+          (newErrors.network = "Card network is required"), (isValid = false);
+        break;
+      case 1:
+        const cardNumberDigits = formData.cardNumber.replace(/\s/g, "");
+        if (!cardNumberDigits)
+          (newErrors.cardNumber = "Card number is required"), (isValid = false);
+        else if (cardNumberDigits.length < 13 || cardNumberDigits.length > 16)
+          (newErrors.cardNumber =
+            "Card number must be between 13 and 16 digits"),
+            (isValid = false);
+        if (!formData.expiry.trim())
+          (newErrors.expiry = "Expiry date is required"), (isValid = false);
+        else {
+          const [month, year] = formData.expiry.split("/");
+          if (!month || !year || parseInt(month) > 12 || parseInt(month) < 1)
+            (newErrors.expiry = "Invalid expiry date"), (isValid = false);
+          else {
+            const expiryDate = new Date(
+              parseInt(`20${year}`),
+              parseInt(month) - 1
+            );
+            if (expiryDate < new Date())
+              (newErrors.expiry = "Card has expired"), (isValid = false);
+          }
         }
-      }
-    }
-
-    // CVV validation
-    if (!formData.cvv.trim()) {
-      newErrors.cvv = "CVV is required";
-      isValid = false;
-    } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-      newErrors.cvv = "CVV must be 3 or 4 digits";
-      isValid = false;
-    }
-
-    // Cardholder name validation
-    if (!formData.cardHolderName.trim()) {
-      newErrors.cardHolderName = "Cardholder name is required";
-      isValid = false;
-    }
-
-    // Bill date validation
-    const billDate = parseInt(formData.billDate);
-    if (!formData.billDate.trim()) {
-      newErrors.billDate = "Bill date is required";
-      isValid = false;
-    } else if (isNaN(billDate) || billDate < 1 || billDate > 31) {
-      newErrors.billDate = "Bill date must be between 1 and 31";
-      isValid = false;
-    }
-
-    // Due date validation
-    const dueDate = parseInt(formData.dueDate);
-    if (!formData.dueDate.trim()) {
-      newErrors.dueDate = "Due date is required";
-      isValid = false;
-    } else if (isNaN(dueDate) || dueDate < 1 || dueDate > 31) {
-      newErrors.dueDate = "Due date must be between 1 and 31";
-      isValid = false;
-    }
-
-    // Credit limit validation
-    const limit = parseFloat(formData.limit);
-    if (!formData.limit.trim()) {
-      newErrors.limit = "Credit limit is required";
-      isValid = false;
-    } else if (isNaN(limit) || limit <= 0) {
-      newErrors.limit = "Credit limit must be a positive number";
-      isValid = false;
+        if (!formData.cvv.trim())
+          (newErrors.cvv = "CVV is required"), (isValid = false);
+        else if (!/^\d{3,4}$/.test(formData.cvv))
+          (newErrors.cvv = "CVV must be 3 or 4 digits"), (isValid = false);
+        if (!formData.cardHolderName.trim())
+          (newErrors.cardHolderName = "Cardholder name is required"),
+            (isValid = false);
+        break;
+      case 2:
+        const billDate = parseInt(formData.billDate);
+        if (!formData.billDate.trim())
+          (newErrors.billDate = "Bill date is required"), (isValid = false);
+        else if (isNaN(billDate) || billDate < 1 || billDate > 31)
+          (newErrors.billDate = "Bill date must be between 1 and 31"),
+            (isValid = false);
+        const dueDate = parseInt(formData.dueDate);
+        if (!formData.dueDate.trim())
+          (newErrors.dueDate = "Due date is required"), (isValid = false);
+        else if (isNaN(dueDate) || dueDate < 1 || dueDate > 31)
+          (newErrors.dueDate = "Due date must be between 1 and 31"),
+            (isValid = false);
+        const limit = parseFloat(formData.limit);
+        if (!formData.limit.trim())
+          (newErrors.limit = "Credit limit is required"), (isValid = false);
+        else if (isNaN(limit) || limit <= 0)
+          (newErrors.limit = "Credit limit must be a positive number"),
+            (isValid = false);
+        break;
+      case 3:
+        break;
     }
 
     setErrors(newErrors);
     return isValid;
   };
 
-  // Form submission handler
-  const validateAndSave = async (): Promise<void> => {
+  const validateForm = (): boolean => {
+    const newErrors: ErrorState = {};
+    let isValid = true;
+
+    if (!formData.bankName.trim())
+      (newErrors.bankName = "Bank name is required"), (isValid = false);
+    if (!formData.cardName.trim())
+      (newErrors.cardName = "Card name is required"), (isValid = false);
+    if (!formData.network.trim())
+      (newErrors.network = "Card network is required"), (isValid = false);
+
+    const cardNumberDigits = formData.cardNumber.replace(/\s/g, "");
+    if (!cardNumberDigits)
+      (newErrors.cardNumber = "Card number is required"), (isValid = false);
+    else if (cardNumberDigits.length < 13 || cardNumberDigits.length > 16)
+      (newErrors.cardNumber = "Card number must be between 13 and 16 digits"),
+        (isValid = false);
+
+    if (!formData.expiry.trim())
+      (newErrors.expiry = "Expiry date is required"), (isValid = false);
+    else {
+      const [month, year] = formData.expiry.split("/");
+      if (!month || !year || parseInt(month) > 12 || parseInt(month) < 1)
+        (newErrors.expiry = "Invalid expiry date"), (isValid = false);
+      else {
+        const expiryDate = new Date(parseInt(`20${year}`), parseInt(month) - 1);
+        if (expiryDate < new Date())
+          (newErrors.expiry = "Card has expired"), (isValid = false);
+      }
+    }
+
+    if (!formData.cvv.trim())
+      (newErrors.cvv = "CVV is required"), (isValid = false);
+    else if (!/^\d{3,4}$/.test(formData.cvv))
+      (newErrors.cvv = "CVV must be 3 or 4 digits"), (isValid = false);
+
+    if (!formData.cardHolderName.trim())
+      (newErrors.cardHolderName = "Cardholder name is required"),
+        (isValid = false);
+
+    const billDate = parseInt(formData.billDate);
+    if (!formData.billDate.trim())
+      (newErrors.billDate = "Bill date is required"), (isValid = false);
+    else if (isNaN(billDate) || billDate < 1 || billDate > 31)
+      (newErrors.billDate = "Bill date must be between 1 and 31"),
+        (isValid = false);
+
+    const dueDate = parseInt(formData.dueDate);
+    if (!formData.dueDate.trim())
+      (newErrors.dueDate = "Due date is required"), (isValid = false);
+    else if (isNaN(dueDate) || dueDate < 1 || dueDate > 31)
+      (newErrors.dueDate = "Due date must be between 1 and 31"),
+        (isValid = false);
+
+    const limit = parseFloat(formData.limit);
+    if (!formData.limit.trim())
+      (newErrors.limit = "Credit limit is required"), (isValid = false);
+    else if (isNaN(limit) || limit <= 0)
+      (newErrors.limit = "Credit limit must be a positive number"),
+        (isValid = false);
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+    } else {
+      Alert.alert(
+        "Validation Error",
+        "Please fix the errors before proceeding."
+      );
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const showStepHelp = () => {
+    setHelpContent(stepHelpContent[currentStep]);
+    setShowHelpDialog(true);
+  };
+
+  const handleSubmit = (): void => {
     if (!validateForm()) {
       Alert.alert(
         "Validation Error",
@@ -265,10 +281,9 @@ export default function AddCardScreen() {
       return;
     }
 
-    await saveCardAndCycle(newCard);
+    saveCardAndCycle(newCard);
   };
 
-  // Save card and create billing cycle
   const saveCardAndCycle = async (newCard: Card): Promise<void> => {
     try {
       const cardSaved = await saveCard(newCard);
@@ -307,12 +322,66 @@ export default function AddCardScreen() {
       const cycleSaved = await createBillCycle(newCycle);
       if (!cycleSaved) throw new Error("Failed to create bill cycle");
 
-      Alert.alert("Success", "Card added successfully!", [
-        { text: "OK", onPress: () => router.replace(`/cards/${newCard.id}`) },
-      ]);
+      setNewCardId(newCard.id);
+      setShowSuccessDialog(true);
     } catch (error) {
       Alert.alert("Error", "Failed to save card. Please try again.");
       console.error(error);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <CardInformationSection
+            formData={formData}
+            setFormData={setFormData}
+            selectedBank={selectedBank}
+            setSelectedBank={setSelectedBank}
+            selectedNetwork={selectedNetwork}
+            setSelectedNetwork={setSelectedNetwork}
+            showCustomBank={showCustomBank}
+            setShowCustomBank={setShowCustomBank}
+            showCustomNetwork={showCustomNetwork}
+            setShowCustomNetwork={setShowCustomNetwork}
+            customBankValue={customBankValue}
+            setCustomBankValue={setCustomBankValue}
+            customNetworkValue={customNetworkValue}
+            setCustomNetworkValue={setCustomNetworkValue}
+            errors={errors}
+            scrollToInput={scrollToInput}
+          />
+        );
+      case 1:
+        return (
+          <CardDetailsSection
+            formData={formData}
+            setFormData={setFormData}
+            errors={errors}
+            scrollToInput={scrollToInput}
+          />
+        );
+      case 2:
+        return (
+          <BillingInformationSection
+            formData={formData}
+            setFormData={setFormData}
+            errors={errors}
+            scrollToInput={scrollToInput}
+          />
+        );
+      case 3:
+        return (
+          <CardAppearanceSection
+            formData={formData}
+            setFormData={setFormData}
+            selectedColorIndex={selectedColorIndex}
+            setSelectedColorIndex={setSelectedColorIndex}
+          />
+        );
+      default:
+        return null;
     }
   };
 
@@ -328,12 +397,7 @@ export default function AddCardScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="p-4">
-          <Text className="text-2xl font-bold text-gray-800 mb-6">
-            Add New Card
-          </Text>
-
-          {/* Card Preview */}
-          <View className="mb-4">
+          <View className="mb-6">
             <FullCardPreview
               bankName={formData.bankName}
               cardName={formData.cardName}
@@ -346,307 +410,49 @@ export default function AddCardScreen() {
             />
           </View>
 
-          {/* Card Information Section */}
-          <Section title="Card Information">
-            {/* Bank Name Dropdown */}
-            <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-1">Bank Name</Text>
-              <RNPickerSelect
-                onValueChange={handleBankSelect}
-                items={banks}
-                value={selectedBank}
-                placeholder={{}}
-                style={pickerSelectStyles}
-                ref={bankPickerRef}
-                useNativeAndroidPickerStyle={false}
-                onOpen={() => scrollToInput(bankNameRef)}
-                Icon={() => <AntDesign name="down" size={24} color="gray" />}
-              />
-              {showCustomBank && (
-                <View className="mt-2 flex-row items-center">
-                  <TextInput
-                    ref={customBankRef}
-                    value={customBankValue}
-                    onChangeText={setCustomBankValue}
-                    placeholder="Enter bank name"
-                    className="flex-1 border border-gray-300 bg-white rounded-lg p-3"
-                    onFocus={() => scrollToInput(customBankRef)}
-                    onSubmitEditing={handleCustomBankSubmit}
-                    autoFocus={true}
-                  />
-                  <TouchableOpacity
-                    className="bg-blue-600 p-3 rounded-lg ml-2"
-                    onPress={handleCustomBankSubmit}
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      Submit
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-gray-400 p-3 rounded-lg ml-2"
-                    onPress={() => {
-                      setShowCustomBank(false);
-                      setCustomBankValue("");
-                      setSelectedBank(null); // Reset picker to placeholder
-                    }}
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {selectedBank &&
-                !banks.some((bank) => bank.value === selectedBank) && (
-                  <Text className="text-gray-600 text-xs mt-1">
-                    Custom Bank: {selectedBank}
-                  </Text>
-                )}
-              {errors.bankName && (
-                <Text className="text-red-500 text-xs mt-1">
-                  {errors.bankName}
-                </Text>
-              )}
-            </View>
+          <ProgressIndicator currentStep={currentStep} />
 
-            <FormInput
-              label="Card Name"
-              value={formData.cardName}
-              onChangeText={(text: string) =>
-                setFormData({ ...formData, cardName: text })
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-2xl font-bold text-gray-800">
+              {
+                [
+                  "Card Information",
+                  "Card Details",
+                  "Billing Information",
+                  "Card Appearance",
+                ][currentStep]
               }
-              placeholder="e.g., Platinum Rewards"
-              error={errors.cardName}
-              inputRef={cardNameRef}
-              onSubmitEditing={() => networkRef.current?.focus()}
-              onFocus={() => scrollToInput(cardNameRef)}
-            />
-
-            {/* Network Type Dropdown */}
-            <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-1">
-                Card Network
-              </Text>
-              <RNPickerSelect
-                onValueChange={handleNetworkSelect}
-                items={networks}
-                value={selectedNetwork}
-                placeholder={{}}
-                style={pickerSelectStyles}
-                ref={networkPickerRef}
-                useNativeAndroidPickerStyle={false} // Important for Android styling
-                onOpen={() => scrollToInput(networkRef)}
-                Icon={() => <AntDesign name="down" size={24} color="gray" />}
-              />
-              {showCustomNetwork && (
-                <View className="mt-2 flex-row items-center">
-                  <TextInput
-                    ref={customNetworkRef}
-                    value={customNetworkValue}
-                    onChangeText={setCustomNetworkValue}
-                    placeholder="Enter network type"
-                    className="flex-1 border border-gray-300 bg-white rounded-lg p-3"
-                    onFocus={() => scrollToInput(customNetworkRef)}
-                    onSubmitEditing={handleCustomNetworkSubmit}
-                    autoFocus={true}
-                  />
-                  <TouchableOpacity
-                    className="bg-blue-600 p-3 rounded-lg ml-2"
-                    onPress={handleCustomNetworkSubmit}
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      Submit
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-gray-400 p-3 rounded-lg ml-2"
-                    onPress={() => {
-                      setShowCustomNetwork(false);
-                      setCustomNetworkValue("");
-                      setSelectedNetwork(null); // Reset picker to placeholder
-                    }}
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {selectedNetwork &&
-                !networks.some((net) => net.value === selectedNetwork) && (
-                  <Text className="text-gray-600 text-xs mt-1">
-                    Custom Network: {selectedNetwork}
-                  </Text>
-                )}
-              {errors.network && (
-                <Text className="text-red-500 text-xs mt-1">
-                  {errors.network}
-                </Text>
-              )}
-            </View>
-          </Section>
-
-          {/* Card Details Section */}
-          <Section title="Card Details">
-            <FormInput
-              label="Card Number"
-              value={formData.cardNumber}
-              onChangeText={(text: string) =>
-                setFormData({ ...formData, cardNumber: formatCardNumber(text) })
-              }
-              placeholder="1234 5678 9012 3456"
-              keyboardType="numeric"
-              maxLength={19}
-              error={errors.cardNumber}
-              inputRef={cardNumberRef}
-              onSubmitEditing={() => expiryRef.current?.focus()}
-              onFocus={() => scrollToInput(cardNumberRef)}
-            />
-
-            <View className="flex-row space-x-4">
-              <View className="flex-1">
-                <FormInput
-                  label="Expiry Date"
-                  value={formData.expiry}
-                  onChangeText={(text: string) =>
-                    setFormData({ ...formData, expiry: formatExpiry(text) })
-                  }
-                  placeholder="MM/YY"
-                  keyboardType="numeric"
-                  maxLength={5}
-                  error={errors.expiry}
-                  inputRef={expiryRef}
-                  onSubmitEditing={() => cvvRef.current?.focus()}
-                  onFocus={() => scrollToInput(expiryRef)}
-                />
-              </View>
-
-              <View className="flex-1">
-                <FormInput
-                  label="CVV"
-                  value={formData.cvv}
-                  onChangeText={(text: string) =>
-                    setFormData({ ...formData, cvv: text })
-                  }
-                  placeholder="123"
-                  keyboardType="numeric"
-                  maxLength={4}
-                  error={errors.cvv}
-                  inputRef={cvvRef}
-                  onFocus={() => scrollToInput(cvvRef)}
-                  onSubmitEditing={() => cardHolderNameRef.current?.focus()}
-                />
-              </View>
-            </View>
-
-            <FormInput
-              label="Card Holder Name"
-              value={formData.cardHolderName}
-              onChangeText={(text: string) =>
-                setFormData({ ...formData, cardHolderName: text })
-              }
-              placeholder="e.g., John Doe"
-              error={errors.cardHolderName}
-              inputRef={cardHolderNameRef}
-              onSubmitEditing={() => billDateRef.current?.focus()}
-              onFocus={() => scrollToInput(cardHolderNameRef)}
-            />
-          </Section>
-
-          {/* Billing Information Section */}
-          <Section title="Billing Information">
-            <View className="flex-row space-x-4">
-              <View className="flex-1">
-                <FormInput
-                  label="Bill Date"
-                  value={formData.billDate}
-                  onChangeText={(text: string) =>
-                    setFormData({ ...formData, billDate: text })
-                  }
-                  placeholder="e.g., 15"
-                  keyboardType="numeric"
-                  maxLength={2}
-                  error={errors.billDate}
-                  inputRef={billDateRef}
-                  onSubmitEditing={() => dueDateRef.current?.focus()}
-                  onFocus={() => scrollToInput(billDateRef)}
-                />
-              </View>
-
-              <View className="flex-1">
-                <FormInput
-                  label="Due Date"
-                  value={formData.dueDate}
-                  onChangeText={(text: string) =>
-                    setFormData({ ...formData, dueDate: text })
-                  }
-                  placeholder="e.g., 25"
-                  keyboardType="numeric"
-                  maxLength={2}
-                  error={errors.dueDate}
-                  inputRef={dueDateRef}
-                  onSubmitEditing={() => limitRef.current?.focus()}
-                  onFocus={() => scrollToInput(dueDateRef)}
-                />
-              </View>
-            </View>
-
-            <FormInput
-              label="Credit Limit"
-              value={formData.limit}
-              onChangeText={(text: string) =>
-                setFormData({ ...formData, limit: text })
-              }
-              placeholder="e.g., 5000"
-              keyboardType="numeric"
-              error={errors.limit}
-              inputRef={limitRef}
-              onFocus={() => scrollToInput(limitRef)}
-            />
-          </Section>
-
-          {/* Card Appearance Section */}
-          <Section title="Card Appearance">
-            <Text className="text-gray-700 font-medium mb-2">Card Color</Text>
-            <View className="flex-row flex-wrap">
-              {cardColors.map((color, index) => (
-                <TouchableOpacity
-                  key={color}
-                  onPress={() => {
-                    setSelectedColorIndex(index);
-                    setFormData({ ...formData, color });
-                  }}
-                  className="mr-4 mb-2 items-center"
-                >
-                  <View
-                    className={`w-12 h-12 rounded-full mb-1 ${
-                      selectedColorIndex === index
-                        ? "border-2 border-gray-800"
-                        : ""
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                  <Text className="text-xs text-center">
-                    {colorNames[index]}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Section>
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            className="bg-blue-600 p-4 rounded-lg mt-6 mb-8"
-            onPress={validateAndSave}
-          >
-            <Text className="text-white text-center font-semibold text-lg">
-              Add Card
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={showStepHelp}>
+              <MaterialIcons name="help-outline" size={24} color="gray" />
+            </TouchableOpacity>
+          </View>
+
+          {renderStepContent()}
+
+          <NavigationButtons
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            handlePreviousStep={handlePreviousStep}
+            handleNextStep={handleNextStep}
+          />
         </View>
       </ScrollView>
 
-      {/* Warning Confirmation Modal */}
+      <WelcomeDialog
+        showWelcomeDialog={showWelcomeDialog}
+        setShowWelcomeDialog={setShowWelcomeDialog}
+      />
+      <SuccessDialog
+        showSuccessDialog={showSuccessDialog}
+        setShowSuccessDialog={setShowSuccessDialog}
+        newCardId={newCardId}
+      />
+      <HelpDialog
+        showHelpDialog={showHelpDialog}
+        setShowHelpDialog={setShowHelpDialog}
+        helpContent={helpContent}
+      />
       <ConfirmationModal
         visible={showWarningModal}
         onClose={() => setShowWarningModal(false)}

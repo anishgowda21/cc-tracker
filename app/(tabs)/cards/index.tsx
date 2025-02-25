@@ -1,13 +1,20 @@
 import { Card, BillCycle } from "@/types";
 import { getCards, getCardBillCycles } from "@/utils/storage";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import { CardPreview } from "@/components/cardList/CardPreview";
 import {
   AddCardButton,
   EmptyState,
 } from "@/components/cardList/AdditionButtons";
+import { Feather } from "@expo/vector-icons";
 
 export default function CardsScreen() {
   const [cardList, setCardList] = useState<Card[]>([]);
@@ -59,23 +66,28 @@ export default function CardsScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-6 pb-2">
+      <View className="px-4 pt-6 pb-2 flex-row justify-between items-center">
         <Text className="text-2xl font-bold text-gray-800">My Cards</Text>
+        <TouchableOpacity
+          onPress={() => router.push("/cards/add")}
+          className="w-10 h-10 bg-blue-600 rounded-full justify-center items-center"
+        >
+          <Feather name={"plus"} size={24} color="white" />
+        </TouchableOpacity>
       </View>
 
       {cardList.length === 0 ? (
         <EmptyState />
       ) : (
-        <View className="px-4 pt-2">
-          {cardList.map((card) => (
-            <CardPreview
-              key={card.id}
-              card={card}
-              latestCycle={billCycles[card.id]}
-            />
-          ))}
-          <AddCardButton />
-        </View>
+        <FlatList
+          data={cardList}
+          renderItem={({ item }) => (
+            <CardPreview card={item} latestCycle={billCycles[item.id]} />
+          )}
+          keyExtractor={(item) => item.id}
+          ListFooterComponent={<AddCardButton />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8 }}
+        />
       )}
     </View>
   );

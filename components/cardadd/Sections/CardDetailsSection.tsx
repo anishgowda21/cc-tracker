@@ -12,7 +12,7 @@ type Props = {
   scrollToInput: (ref: React.RefObject<TextInput>) => void;
 };
 
-export function CardDetailsSection({
+export default function CardDetailsSection({
   formData,
   setFormData,
   errors,

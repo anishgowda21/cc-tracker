@@ -10,7 +10,7 @@ type Props = {
   scrollToInput: (ref: React.RefObject<TextInput>) => void;
 };
 
-export function BillingInformationSection({
+export default function BillingInformationSection({
   formData,
   setFormData,
   errors,

@@ -37,7 +37,13 @@ export function WelcomeDialog({
                 Let's Get Started
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity className="p-2" onPress={() => router.back()}>
+            <TouchableOpacity
+              className="p-2"
+              onPress={() => {
+                setShowWelcomeDialog(false);
+                setTimeout(() => router.replace("/cards"), 100);
+              }}
+            >
               <Text className="text-gray-600 text-center">Cancel</Text>
             </TouchableOpacity>
           </View>

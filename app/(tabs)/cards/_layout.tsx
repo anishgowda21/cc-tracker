@@ -12,7 +12,10 @@ export default function CardsLayout() {
         options={{ title: "Add New Card", headerShown: false }}
       />
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="test" options={{ title: "Test Layout" }} />
+      <Stack.Screen
+        name="test"
+        options={{ title: "Test Layout", headerShown: true }}
+      />
     </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
@@ -7,14 +8,18 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          // headerShown: false if you don't want header
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="cards"
         options={{
-          title: "My Cards",
-          // headerShown: false if you don't want header
+          title: "Cards",
+          tabBarIcon: ({ color }) => (
+            <Feather name="credit-card" size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
