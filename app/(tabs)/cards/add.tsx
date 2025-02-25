@@ -32,7 +32,7 @@ import {
   networks,
   pickerSelectStyles,
 } from "@/utils/consts";
-import { FullCardPreview } from "@/components/common/CardPreview";
+import { FullCardPreview } from "@/components/common/FullCardPreview";
 import { Section } from "@/components/cardadd/Section";
 import { formatCardNumber } from "@/utils/helpers/formHelpers";
 import { AntDesign } from "@expo/vector-icons";
@@ -336,6 +336,7 @@ export default function AddCardScreen() {
           <View className="mb-4">
             <FullCardPreview
               bankName={formData.bankName}
+              cardName={formData.cardName}
               network={formData.network}
               cardNumber={formData.cardNumber}
               cardHolderName={formData.cardHolderName}
