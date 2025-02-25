@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Keyboard,
+  KeyboardEvent,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState, useRef } from "react";
@@ -17,30 +19,59 @@ import {
 import { Card, BillCycle } from "@/types";
 import { ConfirmationModal } from "@/components/common/model";
 import { getCurrentCycleDate, getDueDate } from "@/utils/helpers/dateHelpers";
+import Feather from "@expo/vector-icons/Feather";
+
+type BannerContent = {
+  message: string;
+  color: string;
+  textColor: string;
+  icon: "file-text" | "alert-triangle" | "clock" | "check-circle";
+};
 
 // Banner content based on cycle status
-const getBannerContent = (cycle: BillCycle) => {
+const getBannerContent = (cycle: BillCycle): BannerContent => {
   switch (cycle.status) {
     case "not updated":
-      return { message: "Bill not updated for this cycle", color: "yellow" };
+      return {
+        message: "Bill not updated for this cycle",
+        color: "#fef9c3",
+        textColor: "#854d0e",
+        icon: "file-text",
+      };
     case "unpaid":
       return {
-        message: `Bill amount: $${cycle.totalBill} - Payment pending`,
-        color: "red",
+        message: `Bill amount: ₹${cycle.totalBill.toLocaleString(
+          "en-IN"
+        )} - Payment pending`,
+        color: "#fee2e2",
+        textColor: "#b91c1c",
+        icon: "alert-triangle",
       };
     case "partial":
       return {
-        message: `Remaining payment: $${cycle.remainingAmount}`,
-        color: "orange",
+        message: `Remaining payment: ₹${cycle.remainingAmount.toLocaleString(
+          "en-IN"
+        )}`,
+        color: "#ffedd5",
+        textColor: "#9a3412",
+        icon: "clock",
       };
     case "overdue":
-      return { message: "Payment Overdue!", color: "red" };
+      return {
+        message: "Payment Overdue!",
+        color: "#fee2e2",
+        textColor: "#b91c1c",
+        icon: "alert-triangle",
+      };
     case "paid":
-      return { message: "You are all caught up!", color: "green" };
+      return {
+        message: "You are all caught up!",
+        color: "#d1fae5",
+        textColor: "#166534",
+        icon: "check-circle",
+      };
   }
 };
-
-// Reusable Confirmation Modal Component
 
 export default function CardView() {
   const { id }: { id: string } = useLocalSearchParams();
@@ -50,6 +81,21 @@ export default function CardView() {
   const [showBillInput, setShowBillInput] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (event) => {
+        if (showBillInput && scrollViewRef.current) {
+          scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, [showBillInput]);
 
   useEffect(() => {
     loadData();
@@ -129,7 +175,7 @@ export default function CardView() {
   const scrollToInput = () => {
     setShowBillInput(true);
     setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 300, animated: true });
+      scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
@@ -144,120 +190,236 @@ export default function CardView() {
   return (
     <ScrollView
       ref={scrollViewRef}
-      className="flex-1"
+      className="flex-1 bg-gray-50"
       contentContainerStyle={{ padding: 16 }}
     >
-      {/* Banner */}
-      {banner && (
-        <View
-          className="p-3 mb-4 rounded-lg"
-          style={{ backgroundColor: banner.color }}
-        >
-          <Text className="text-white font-semibold">{banner.message}</Text>
-        </View>
-      )}
-
-      {/* Card Details */}
+      {/* Card Details - Visual Credit Card */}
       <View
-        className="w-full rounded-3xl p-6 mb-6"
-        style={{ backgroundColor: card.color }}
+        className="w-full rounded-2xl p-6 mb-6"
+        style={{
+          backgroundColor: card.color,
+          shadowColor: card.color,
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
+          elevation: 10,
+        }}
       >
-        <Text className="text-white text-2xl mb-6">{card.bankName}</Text>
+        <View className="flex-row justify-between items-start mb-8">
+          <View>
+            <Text className="text-white text-xl font-bold">
+              {card.bankName}
+            </Text>
+            <Text className="text-white text-xs opacity-70">
+              {card.cardName || "Platinum Rewards"} -{" "}
+              {card.lastDigits || "4567"}
+            </Text>
+          </View>
+          <Text className="text-white font-medium text-sm">
+            {card.network || "VISA"}
+          </Text>
+        </View>
 
-        <Text className="text-white text-lg opacity-80">Current Balance</Text>
-        <Text className="text-white text-4xl mb-6">
-          ${latestCycle ? latestCycle.remainingAmount : "0"}
+        <Text className="text-white text-sm opacity-80 mb-1">
+          Current Balance
+        </Text>
+        <Text className="text-white text-3xl font-bold mb-6">
+          ₹
+          {latestCycle
+            ? latestCycle.remainingAmount.toLocaleString("en-IN")
+            : "0"}
         </Text>
 
-        <View className="flex-row justify-between">
+        <View className="flex-row justify-between items-center">
           <View>
-            <Text className="text-white opacity-80">Available Credit</Text>
-            <Text className="text-white text-2xl">
-              $
+            <Text className="text-white text-xs opacity-80 mb-1">
+              Total Bill Amount
+            </Text>
+            <Text className="text-white text-lg font-semibold">
+              ₹
               {latestCycle
-                ? card.limit - latestCycle.remainingAmount
-                : card.limit}
+                ? latestCycle.totalBill.toLocaleString("en-IN")
+                : "0"}
             </Text>
           </View>
           <View>
-            <Text className="text-white opacity-80">Credit Limit</Text>
-            <Text className="text-white text-2xl">${card.limit}</Text>
+            <Text className="text-white text-xs opacity-80 mb-1">
+              Credit Limit
+            </Text>
+            <Text className="text-white text-lg font-semibold">
+              ₹{card.limit.toLocaleString("en-IN")}
+            </Text>
           </View>
         </View>
       </View>
 
-      {/* Action Buttons */}
-      <View className="flex-row justify-between mb-6">
-        <TouchableOpacity
-          className="bg-white p-4 rounded-xl flex-1 mx-2 items-center shadow"
-          onPress={() => router.push(`/cards/${id}/payment`)}
+      {/* Status Banner */}
+      {banner && (
+        <View
+          className="p-4 mb-6 rounded-xl flex-row items-center"
+          style={{ backgroundColor: banner.color }}
         >
-          <Text className="font-semibold">Make Payment</Text>
-        </TouchableOpacity>
+          <Feather
+            name={banner.icon}
+            size={20}
+            color={banner.textColor}
+            style={{ marginRight: 8 }}
+          />
+          <Text className="font-semibold" style={{ color: banner.textColor }}>
+            {banner.message}
+          </Text>
+        </View>
+      )}
 
-        <TouchableOpacity className="bg-white p-4 rounded-xl flex-1 mx-2 items-center shadow">
-          <Text className="font-semibold">Payment History</Text>
-        </TouchableOpacity>
+      {/* Action Buttons - Quick Actions */}
+      <View className="mb-6">
+        <Text className="text-gray-700 font-semibold text-lg mb-3">
+          Quick Actions
+        </Text>
+        <View className="flex-row justify-between">
+          <TouchableOpacity
+            className="bg-white rounded-xl p-4 shadow flex-1 mr-2 items-center"
+            onPress={() => router.push(`/cards/${id}/payment`)}
+          >
+            <View className="bg-blue-100 p-2 rounded-full mb-2">
+              <Feather name="dollar-sign" size={20} color="#2563EB" />
+            </View>
+            <Text className="text-sm font-medium text-gray-800">Pay Now</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity className="bg-white p-4 rounded-xl flex-1 mx-2 items-center shadow">
-          <Text className="font-semibold">Statistics</Text>
-        </TouchableOpacity>
+          <TouchableOpacity className="bg-white rounded-xl p-4 shadow flex-1 mx-2 items-center">
+            <View className="bg-purple-100 p-2 rounded-full mb-2">
+              <Feather name="file-text" size={20} color="#7C3AED" />
+            </View>
+            <Text className="text-sm font-medium text-gray-800">
+              Bill History
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity className="bg-white rounded-xl p-4 shadow flex-1 ml-2 items-center">
+            <View className="bg-green-100 p-2 rounded-full mb-2">
+              <Feather name="bar-chart-2" size={20} color="#16A34A" />
+            </View>
+            <Text className="text-sm font-medium text-gray-800">Stats</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Permanent View Bill Cycles Button */}
-      <TouchableOpacity
-        className="bg-purple-500 p-4 rounded-xl items-center shadow mb-6"
-        onPress={() => {}}
-      >
-        <Text className="text-white font-semibold">View Bill Cycles</Text>
-      </TouchableOpacity>
+      {/* Payment Information */}
+      <View className="bg-white rounded-xl p-4 mb-6 shadow">
+        <Text className="text-gray-800 font-semibold text-lg mb-4">
+          Payment Details
+        </Text>
+
+        <View className="flex-row justify-between py-3 border-b border-gray-100">
+          <View className="flex-row items-center">
+            <Feather
+              name="calendar"
+              size={16}
+              color="#4B5563"
+              style={{ marginRight: 8 }}
+            />
+            <Text className="text-gray-600">Due Date</Text>
+          </View>
+          <Text className="font-medium text-gray-800">
+            {latestCycle ? latestCycle.dueDate : "N/A"}
+          </Text>
+        </View>
+
+        <View className="flex-row justify-between py-3 border-b border-gray-100">
+          <View className="flex-row items-center">
+            <Feather
+              name="dollar-sign"
+              size={16}
+              color="#4B5563"
+              style={{ marginRight: 8 }}
+            />
+            <Text className="text-gray-600">Total Bill</Text>
+          </View>
+          <Text className="font-medium text-gray-800">
+            ₹{latestCycle ? latestCycle.totalBill.toLocaleString("en-IN") : "0"}
+          </Text>
+        </View>
+
+        <View className="flex-row justify-between py-3">
+          <View className="flex-row items-center">
+            <Feather
+              name="clock"
+              size={16}
+              color="#4B5563"
+              style={{ marginRight: 8 }}
+            />
+            <Text className="text-gray-600">Bill Generated</Text>
+          </View>
+          <Text className="font-medium text-gray-800">
+            {latestCycle
+              ? latestCycle.cycleDate.replace(
+                  /(\d{4})-(\d{2})-(\d{2})/,
+                  "$3/$2/$1"
+                )
+              : "N/A"}
+          </Text>
+        </View>
+      </View>
 
       {/* Add Due Button and Input (Only for "not updated") */}
       {isNotUpdated && (
-        <View className="mb-6">
-          <TouchableOpacity
-            className="bg-blue-500 p-4 rounded-xl items-center shadow"
-            onPress={scrollToInput}
-          >
-            <Text className="text-white font-semibold">Add Due</Text>
-          </TouchableOpacity>
-
-          {showBillInput && (
-            <View className="mt-4 bg-white p-4 rounded-xl shadow">
+        <View className="bg-white rounded-xl p-4 mb-6 shadow">
+          <Text className="text-gray-800 font-semibold text-lg mb-3">
+            Update Bill Amount
+          </Text>
+          {showBillInput ? (
+            <>
               <TextInput
                 placeholder="Enter bill amount"
                 value={billInput}
                 onChangeText={setBillInput}
                 keyboardType="numeric"
-                className="border p-2 rounded mb-4"
+                className="border border-gray-300 p-3 rounded-lg mb-3"
                 onFocus={scrollToInput}
               />
               <TouchableOpacity
-                className="bg-green-500 p-3 rounded"
+                className="bg-blue-600 p-3 rounded-lg"
                 onPress={handleBillUpdate}
               >
-                <Text className="text-white text-center">Submit</Text>
+                <Text className="text-white text-center font-medium">
+                  Save Bill Amount
+                </Text>
               </TouchableOpacity>
-            </View>
+            </>
+          ) : (
+            <TouchableOpacity
+              className="bg-blue-600 p-3 rounded-lg"
+              onPress={scrollToInput}
+            >
+              <Text className="text-white text-center font-medium">
+                Add Bill Amount
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
       )}
 
-      {/* Delete Card Button */}
-      <TouchableOpacity
-        className="bg-red-500 p-4 rounded-xl items-center shadow mb-6"
-        onPress={() => setShowDeleteModal(true)}
-      >
-        <Text className="text-white font-semibold">Delete Card</Text>
-      </TouchableOpacity>
+      {/* Edit and Delete buttons side by side */}
+      <View className="flex-row mb-8 space-x-3">
+        {/* Edit Card Button */}
+        <TouchableOpacity className="bg-indigo-600 p-4 rounded-xl flex-1 flex-row justify-center shadow">
+          <Text className="text-white font-semibold">Edit Card</Text>
+        </TouchableOpacity>
 
-      {/* Payment Information */}
-      <View className="bg-white rounded-xl p-4">
-        <Text className="text-xl font-semibold mb-4">Payment Information</Text>
-        <View className="flex-row justify-between py-3 border-b border-gray-200">
-          <Text className="text-gray-600">Due Date</Text>
-          <Text>{latestCycle ? latestCycle.dueDate : "N/A"}</Text>
-        </View>
+        {/* Delete Card Button */}
+        <TouchableOpacity
+          className="flex-1 flex-row justify-center items-center bg-white p-4 rounded-xl shadow border border-red-200"
+          onPress={() => setShowDeleteModal(true)}
+        >
+          <Feather
+            name="trash-2"
+            size={18}
+            color="#DC2626"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-red-600 font-medium">Delete Card</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Delete Confirmation Modal */}

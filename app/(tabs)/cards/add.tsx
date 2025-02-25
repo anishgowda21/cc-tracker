@@ -164,8 +164,8 @@ export default function AddCardScreen() {
     if (!cardNumberDigits) {
       newErrors.cardNumber = "Card number is required";
       isValid = false;
-    } else if (cardNumberDigits.length !== 16) {
-      newErrors.cardNumber = "Card number must be 16 digits";
+    } else if (cardNumberDigits.length < 13 || cardNumberDigits.length > 16) {
+      newErrors.cardNumber = "Card number must be between 13 and 16 digits";
       isValid = false;
     }
 
@@ -248,6 +248,7 @@ export default function AddCardScreen() {
 
     const newCard: Card = {
       id: Date.now().toString(),
+      lastDigits: formData.cardNumber.replace(/\s/g, "").slice(-4),
       bankName: formData.bankName.trim(),
       cardName: formData.cardName.trim(),
       network: formData.network.trim(),
@@ -652,6 +653,7 @@ export default function AddCardScreen() {
           setShowWarningModal(false);
           saveCardAndCycle({
             id: Date.now().toString(),
+            lastDigits: formData.cardNumber.replace(/\s/g, "").slice(-4),
             bankName: formData.bankName.trim(),
             cardName: formData.cardName.trim(),
             network: formData.network.trim(),

@@ -1,5 +1,6 @@
 export type Card = {
   id: string;
+  lastDigits: string;
   bankName: string;
   cardName: string;
   network: string;
